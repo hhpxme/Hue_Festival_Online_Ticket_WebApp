@@ -11,6 +11,12 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Cryptography;
 using System.Text;
+using BarcodeStandard;
+using System;
+using IronBarCode;
+using System.Runtime.CompilerServices;
+using System.Net.WebSockets;
+using Microsoft.VisualBasic;
 
 namespace HF_WEB_API.Controllers
 {
@@ -29,7 +35,48 @@ namespace HF_WEB_API.Controllers
             _userService = userService;
         }
 
-        
+        #region Generate Barcode and QRcode for ticket
+        private string generateBarcode(string value)
+        {
+            string root = "Contents/Tickets/Barcode/";
+            var barcode = BarcodeWriter.CreateBarcode(value, BarcodeWriterEncoding.Code128);
+            string link = root + value + ".jpeg";
+            barcode.SaveAsImage(link);
+
+            return link;
+        }
+
+        private string generateQRCode(string value)
+        {
+            string root = "Contents/Tickets/QRCode/";
+            var qrCode = QRCodeWriter.CreateQrCode(value, Size: 512, QRCodeWriter.QrErrorCorrectionLevel.Highest);
+            string link = root + value + ".jpeg";
+            qrCode.SaveAsImage(link);
+
+            return link;
+        }
+        #endregion
+
+        #region HashSHA256 for TicketId
+        private string ComputeSha256Hash(string rawData)
+        {
+            // Create a SHA256
+            using (SHA256 sha256Hash = SHA256.Create())
+            {
+                // ComputeHash - returns byte array
+                byte[] bytes = sha256Hash.ComputeHash(Encoding.UTF8.GetBytes(rawData));
+
+                // Convert byte array to a string
+                StringBuilder builder = new StringBuilder();
+                for (int i = 0; i < bytes.Length; i++)
+                {
+                    builder.Append(bytes[i].ToString("x2"));
+                }
+                return builder.ToString();
+            }
+        }
+        #endregion
+
         [Authorize]
         [HttpPost("buy-ticket")]
         public async Task<IActionResult> BuyTicket(int eventId, TicketOwnerModel model)
@@ -37,16 +84,20 @@ namespace HF_WEB_API.Controllers
             string userId = _userService.GetUserId();
             string username = _userService.GetUserName();
             DateTime createTime = DateTime.Now;
-            // id = day + username + month + random integer + hour + accountId + minute
+            // id = day + username + month + random integer + hour + accountId + minute + -event- + eventId
             string idx = createTime.Day.ToString()
                 + username + createTime.Month.ToString()
                 + new Random().Next(1000, 9999) + createTime.Hour.ToString()
-                + userId + createTime.Minute.ToString();
+                + userId + createTime.Minute.ToString()
+                + "-event-" + eventId.ToString();
             string idHash = ComputeSha256Hash(idx); // Mã hóa Id dạng SHA256
+
+            string barcodeLink = generateBarcode(idHash);
+            string qrcodeLink = generateQRCode(idHash);
 
             try
             {
-                var ticket = await _ticketRepository.CreateTicketAsync(idHash, userId, eventId, createTime, "", "", model);
+                var ticket = await _ticketRepository.CreateTicketAsync(idHash, userId, eventId, createTime, barcodeLink, qrcodeLink, model);
 
                 return Ok(ticket);
             }
@@ -110,15 +161,41 @@ namespace HF_WEB_API.Controllers
             return ticket == null ? NotFound() : Ok(ticket);
         }
 
-        [Authorize(Roles = UserRole.Admin)]
-        [HttpPut("active-ticket/{id}")]
-        public async Task<IActionResult> ActiveTicket(string id)
+        [HttpGet("ReadCode/")]
+        [Obsolete]
+        public string ReadCode(string codeLink)
         {
-            var ticket = await _ticketRepository.GetTicketByIdAsync(id);
+            //var res = await BarcodeReader.ReadAsync(codeLink); // From a file
+            BarcodeResult res = BarcodeReader.QuicklyReadOneBarcode(codeLink);
+            return res.Text;
+
+            // Contents/Tickets/Barcode/c84f7be19f1db21cf4b038cfc11ee10c90022dfbd3e797ac24a17d14361c33d4.jpeg
+        }
+
+        [Authorize(Roles = UserRole.Admin)]
+        [HttpPut("active-ticket")]
+        public async Task<IActionResult> ActiveTicket(string codeLink)
+        {
+#pragma warning disable CS0618 // Type or member is obsolete
+            var idx = BarcodeReader.QuicklyReadOneBarcode(codeLink).Text.Trim();
+            if (Directory.Exists(codeLink))
+            {
+                return Ok(new Response { Status = "Failed", Message = $"Barcode is not found" });
+            }
+#pragma warning restore CS0618 // Type or member is obsolete
+
+            var ticket = await _ticketRepository.GetTicketByIdAsync(idx);
             if (ticket != null)
             {
-                await _ticketRepository.ActiveTicketAsync(id);
-                return Ok(new Response { Status = "Success", Message = $"Ticket {id} activation successfully" });
+                if (ticket.IsActive == false)
+                {
+                    await _ticketRepository.ActiveTicketAsync(idx);
+                    return Ok(new Response { Status = "Success", Message = $"Ticket {idx} activation successfully" });
+                }
+                else
+                {
+                    return Ok(new Response { Status = "Failed", Message = $"Ticket {idx} activated" });
+                }
             }
             else
             {
@@ -148,24 +225,6 @@ namespace HF_WEB_API.Controllers
         {
             await _ticketRepository.DeleteTicketAsync(id);
             return Ok(new Response { Status = "Success", Message = $"Delete Ticket: {id}" });
-        }
-
-        private string ComputeSha256Hash(string rawData)
-        {
-            // Create a SHA256
-            using (SHA256 sha256Hash = SHA256.Create())
-            {
-                // ComputeHash - returns byte array
-                byte[] bytes = sha256Hash.ComputeHash(Encoding.UTF8.GetBytes(rawData));
-
-                // Convert byte array to a string
-                StringBuilder builder = new StringBuilder();
-                for (int i = 0; i < bytes.Length; i++)
-                {
-                    builder.Append(bytes[i].ToString("x2"));
-                }
-                return builder.ToString();
-            }
         }
     }
 }

@@ -152,6 +152,7 @@ namespace Web_API.Controllers
             {
                 var username = identity.Name?.ToString();
                 var role = identity.Claims.FirstOrDefault(p => p.Type == ClaimTypes.Role)?.Value;
+                var isL = IronBarCode.License.IsLicensed.ToString();
 
                 return Task.FromResult<IActionResult>(Ok(new
                 {
@@ -159,7 +160,7 @@ namespace Web_API.Controllers
                     Role = role,
                     Acc = _dbContext.Users.FirstOrDefault(x => x.UserName == username),
                     AccId = identity.Claims.FirstOrDefault(p => p.Type == ClaimTypes.Sid)?.Value,
-
+                    isLicense = isL,
                 }));
             }
             else

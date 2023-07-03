@@ -35,6 +35,12 @@ namespace HF_WEB_API.Repositories.Event
             }
         }
 
+        public async Task<List<EventModel>> GetAllEventModelAsync()
+        {
+            var ev = await _context.Events!.ToListAsync();
+            return _mapper.Map<List<EventModel>>(ev);
+        }
+
         public async Task<List<EventInformationModel>> GetAllEventAsync()
         {
             var ev = await _context.Events!.ToListAsync();
@@ -53,6 +59,17 @@ namespace HF_WEB_API.Repositories.Event
             if (ev != null)
             {
                 ev = _mapper.Map<Data.Event>(model);
+                _context.Events!.Update(ev);
+                await _context.SaveChangesAsync();
+            }
+        }
+
+        public async Task UpdateEventCurrentTicketAsync(int id, int quantity)
+        {
+            var ev = _context.Events.FirstOrDefault(p => p.Id == id);
+            if (ev != null)
+            {
+                ev.NumOfTicketsSold = quantity;
                 _context.Events!.Update(ev);
                 await _context.SaveChangesAsync();
             }

@@ -22,7 +22,7 @@ namespace HF_WEB_API.Repositories.Ticket
         public async Task ActiveTicketAsync(string id)
         {
             var ticket = _context.Tickets.FirstOrDefault(p => p.Id == id);
-            if (ticket != null)
+            if (ticket != null && ticket.IsActive == false)
             {
                 ticket.IsActive = true;
                 _context.Tickets!.Update(ticket);
@@ -33,7 +33,7 @@ namespace HF_WEB_API.Repositories.Ticket
         public async Task PayTicketAsync(string id)
         {
             var ticket = _context.Tickets.FirstOrDefault(p => p.Id == id);
-            if (ticket != null)
+            if (ticket != null && ticket.IsPay == false)
             {
                 ticket.IsPay = true;
                 _context.Tickets!.Update(ticket);
@@ -105,6 +105,13 @@ namespace HF_WEB_API.Repositories.Ticket
         {
             var ticket = await _context.Tickets!.FirstOrDefaultAsync(p => p.Id == id);
             return _mapper.Map<UserTicketInformationModel>(ticket);
+        }
+
+        public int CountTicketInEvent(int id)
+        {
+            var ticket = _context.Tickets!.Where(p => p.EventId == id).ToList();
+            var num = ticket.Count;
+            return num;
         }
     }
 }

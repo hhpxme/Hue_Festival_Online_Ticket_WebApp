@@ -3,6 +3,7 @@ using HF_WEB_API.Helper;
 using HF_WEB_API.Models;
 using HF_WEB_API.Models.Event;
 using HF_WEB_API.Repositories.Event;
+using HF_WEB_API.Repositories.Ticket;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -15,10 +16,25 @@ namespace HF_WEB_API.Controllers
     public class EventController : ControllerBase
     {
         private readonly IEventRepository _repo;
+        private readonly ITicketRepository _ticketRepository;
 
-        public EventController(IEventRepository repo)
+        public EventController(IEventRepository repo, ITicketRepository ticketRepository)
         {
             _repo = repo;
+            _ticketRepository = ticketRepository;
+        }
+
+        [HttpGet("get-all-for-admin")]
+        public async Task<IActionResult> GetAllEventForAdmin()
+        {
+            try
+            {
+                return Ok(await _repo.GetAllEventModelAsync());
+            }
+            catch
+            {
+                return BadRequest();
+            }
         }
 
         [HttpGet]
@@ -80,5 +96,23 @@ namespace HF_WEB_API.Controllers
             await _repo.DeleteEventAsync(id);
             return Ok();
         }
+
+        /*
+        [Authorize(Roles = UserRole.Admin)]
+        [HttpPut("/update-quantity-current-ticket")]
+        public async Task<IActionResult> UpdateEventQuantityCurrentTicket(int id)
+        {
+            var ev = await _repo.GetEventAsync(id);
+
+            if (ev != null)
+            {
+                await _repo.UpdateEventCurrentTicketAsync(id, _ticketRepository.CountTicketInEvent(id));
+                return Ok(new Response { Status = "Success", Message = $"{id} edited" });
+            }
+            else
+            {
+                return NotFound();
+            };
+        }*/
     }
 }
