@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using HF_WEB_API.Data;
+using HF_WEB_API.Helper;
 using HF_WEB_API.Helper.UserServices;
 using HF_WEB_API.Models.News;
 using Microsoft.EntityFrameworkCore;
@@ -45,16 +46,25 @@ namespace HF_WEB_API.Repositories.News
             }
         }
 
-        /* public async Task<List<NewsModel>> GetAllNewsAsync(bool isApprove)
-        {
-            var newses = await _context.Newses!.Where(p => p.isApprove == isApprove).ToListAsync();
-            return _mapper.Map<List<NewsModel>>(newses);
-        } */
-
         public async Task<List<NewsModel>> GetAllNewsAsync()
         {
             var newses = await _context.Newses!.ToListAsync();
             return _mapper.Map<List<NewsModel>>(newses);
+        }
+
+        public async Task<List<NewsModel>> GetAllNewsSortAsync(bool inc)
+        {
+            var newses = await _context.Newses!.ToListAsync();
+            newses.Sort((dt1, dt2) => DateTime.Compare(dt1.ReleaseDate, dt2.ReleaseDate));
+            if (inc)
+            {
+                return _mapper.Map<List<NewsModel>>(newses);
+            }
+            else
+            {
+                newses.Reverse();
+                return _mapper.Map<List<NewsModel>>(newses);
+            }
         }
 
         public async Task<NewsModel> GetNewsAsync(int id)

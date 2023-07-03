@@ -30,7 +30,6 @@
   <ItemGroup>
     <Folder Include="Contents\Tickets\Barcode\" />
     <Folder Include="Contents\Tickets\QRCode\" />
-    <Folder Include="Helper\NewFolder\" />
   </ItemGroup>
 
 </Project>

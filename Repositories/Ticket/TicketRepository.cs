@@ -106,12 +106,5 @@ namespace HF_WEB_API.Repositories.Ticket
             var ticket = await _context.Tickets!.FirstOrDefaultAsync(p => p.Id == id);
             return _mapper.Map<UserTicketInformationModel>(ticket);
         }
-
-        public int CountTicketInEvent(int id)
-        {
-            var ticket = _context.Tickets!.Where(p => p.EventId == id).ToList();
-            var num = ticket.Count;
-            return num;
-        }
     }
 }

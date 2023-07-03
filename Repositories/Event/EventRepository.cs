@@ -64,15 +64,23 @@ namespace HF_WEB_API.Repositories.Event
             }
         }
 
-        public async Task UpdateEventCurrentTicketAsync(int id, int quantity)
+        public async Task UpdateEventCurrentTicketAsync(int id)
         {
             var ev = _context.Events.FirstOrDefault(p => p.Id == id);
+            ev.Tickets = _context.Tickets.Where(p => p.EventId == ev.Id).ToList();
             if (ev != null)
             {
-                ev.NumOfTicketsSold = quantity;
+                ev.NumOfTicketsSold = ev.Tickets.Count;
                 _context.Events!.Update(ev);
                 await _context.SaveChangesAsync();
             }
+        }
+
+        public async Task<List<EventInformationModel>> GetAllEventByDateAsync(DateTime dateTime)
+        {
+            var ev = await _context.Events!.Where(p => p.StartTime <= dateTime && p.EndTime >= dateTime).ToListAsync();
+            
+            return _mapper.Map<List<EventInformationModel>>(ev);
         }
     }
 }

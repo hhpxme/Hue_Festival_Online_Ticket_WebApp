@@ -34,7 +34,20 @@ namespace HF_WEB_API.Controllers
                 return BadRequest();
             }
         }
-        
+
+        [HttpGet("sort-by-datetime/{inc}")]
+        public async Task<IActionResult> GetAllNewsSortByDate(bool inc)
+        {
+            try
+            {
+                return Ok(await _repo.GetAllNewsSortAsync(inc));
+            }
+            catch
+            {
+                return BadRequest();
+            }
+        }
+
         [HttpGet("{id}")]
         public async Task<IActionResult> GetNewsById(int id)
         {

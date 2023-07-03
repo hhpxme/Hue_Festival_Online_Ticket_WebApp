@@ -24,6 +24,7 @@ namespace HF_WEB_API.Controllers
             _ticketRepository = ticketRepository;
         }
 
+        [Authorize(Roles = UserRole.Admin)]
         [HttpGet("get-all-for-admin")]
         public async Task<IActionResult> GetAllEventForAdmin()
         {
@@ -37,12 +38,25 @@ namespace HF_WEB_API.Controllers
             }
         }
 
-        [HttpGet]
+        [HttpGet("get-all")]
         public async Task<IActionResult> GetAllEvent()
         {
             try
             {
                 return Ok(await _repo.GetAllEventAsync());
+            }
+            catch
+            {
+                return BadRequest();
+            }
+        }
+
+        [HttpGet("get-by-date")]
+        public async Task<IActionResult> GetAllEventByDate(DateTime dateTime)
+        {
+            try
+            {
+                return Ok(await _repo.GetAllEventByDateAsync(dateTime));
             }
             catch
             {
@@ -97,8 +111,7 @@ namespace HF_WEB_API.Controllers
             return Ok();
         }
 
-        /*
-        [Authorize(Roles = UserRole.Admin)]
+        
         [HttpPut("/update-quantity-current-ticket")]
         public async Task<IActionResult> UpdateEventQuantityCurrentTicket(int id)
         {
@@ -106,13 +119,13 @@ namespace HF_WEB_API.Controllers
 
             if (ev != null)
             {
-                await _repo.UpdateEventCurrentTicketAsync(id, _ticketRepository.CountTicketInEvent(id));
+                await _repo.UpdateEventCurrentTicketAsync(id);
                 return Ok(new Response { Status = "Success", Message = $"{id} edited" });
             }
             else
             {
                 return NotFound();
             };
-        }*/
+        }
     }
 }

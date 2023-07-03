@@ -35,7 +35,7 @@ namespace HF_WEB_API.Data
         public long TicketPrice { get; set; }
 
         // Ticket List of Events
-        public virtual IEnumerable<Ticket> Tickets { get; set; } = Enumerable.Empty<Ticket>();
+        public ICollection<Ticket> Tickets { get; set; } = new List<Ticket>();
 
     }
 }

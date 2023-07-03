@@ -14,6 +14,5 @@ namespace HF_WEB_API.Repositories.Ticket
         public Task ActiveTicketAsync(string id);
         public Task PayTicketAsync(string id);
         public Task DeleteTicketAsync(string id);
-        public int CountTicketInEvent(int id);
     }
 }
